@@ -1,0 +1,14 @@
+┌────────────┐      build_index.py      ┌────────────┐
+│  CSV file  │ ───────────────────────► │  BM25 idx  │  (≈ 1 GB on disk)
+└────────────┘                         └────────────┘
+                                            ▲
+                               retriever.py │  top‑N hits
+                                            ▼
+                                        reranker.py    (cross‑encoder)
+                                            ▲
+                                            │  re‑ranked list
+                                            ▼
+                               reader.py  (GPT‑4o, Claude, etc.)
+                                            │  summaries + “why”
+                                            ▼
+                                     fastapi_app.py  →  JSON / UI

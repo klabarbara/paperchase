@@ -1,0 +1,23 @@
+chatGPT'd. it's a little janky. (surprise!) more of a strategy guide than a bible. 
+
+paperchase/
+├── README.md
+├── pyproject.toml               # deps: pyserini, sentence-transformers, fastapi, uvicorn, openai …
+├── data/
+│   ├── raw/cs-papersum.csv
+│   └── processed/               # *.jsonl produced by build_index.py
+├── index/                       # BM25 shards, created once
+├── scripts/
+│   ├── build_index.py
+│   └── eval_notebook.ipynb
+├── app/                         # runtime modules
+│   ├── __init__.py
+│   ├── config.py
+│   ├── retriever.py             # thin BM25 wrapper
+│   ├── reranker.py              # CrossEncoder(…)
+│   ├── reader.py                # OpenAI / Anthropic wrapper + caching
+│   └── pipeline.py              # orchestrates the three steps
+├── api/
+│   └── fastapi_app.py           # ui / REST endpoint
+└── tests/
+    └── test_pipeline.py

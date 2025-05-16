@@ -1,6 +1,19 @@
 # paperchase
 Recommendation system for background reading
 
-References:
+# MVP
 
-- Liu, J., Vats, A., & He, Z. (2025). CS-PaperSum: A Large-Scale Dataset of AI-Generated Summaries for Scientific Papers. arXiv:2502.20582. [![arXiv](https://img.shields.io/badge/arXiv-2502.20582-b31b1b.svg)](https://arxiv.org/abs/2502.20582)
+## Ingestion:
+
+## deal with multiline entries and character breaks in csv:
+tr -d '\r' < data/raw/papersum.csv > data/raw/papersum_normalized.csv
+
+Lucene uses Java, so check to see if JVM is installed:
+java -version
+
+paperchase uses JDK 17, which can be installed (macos):
+
+`brew install openjdk@17`
+
+Win/linux please refer to openjdk.org
+
