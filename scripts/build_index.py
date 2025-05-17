@@ -72,11 +72,11 @@ def build_bm25():
         except Exception as e:
             print(f"error indexing {path.name}: {e}")
 
-    writer.commit()
+    writer.close()
     print(f"Indexing completed. Index is stored in {INDEX_DIR}")
 
 if __name__ == "__main__":
     
     csv_to_jsonl()
-    # build_bm25()
+    build_bm25()
             
