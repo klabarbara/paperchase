@@ -175,8 +175,11 @@ cython_debug/
 
 # data
 data/
-scratch.txt
 index/
 
 # defunct files kept for posterity
 *_archive*
+
+# scratchpads
+notebooks/scratch.ipynb
+scratch.txt
