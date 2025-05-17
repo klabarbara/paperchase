@@ -41,12 +41,11 @@ def csv_to_jsonl():
                 out = JSONL_DIR / f"{rec['paperID']}.json"
                 out.write_text(json.dumps({
                     "id":        rec["paperID"],
-                    "title":     rec["title"],
-                    "abstract":  safe(rec["abstract"]),
-                    "venue":     rec["venue"],
+                    "contents":  f"{rec['title']} {safe(rec['abstract'])} {rec['text']}",
                     "year":      rec["year"],
-                    "text":      rec["text"],
-                    "contents":  f"{rec['title']} {rec['abstract']} {rec['text']}"
+                    "title":     rec["title"],
+                    # "abstract":  safe(rec["abstract"]), not sure if separate is necessary
+                    "venue":     rec["venue"],
                 }, allow_nan=False), encoding="utf‑8")
 
     except Exception as e:
@@ -77,6 +76,6 @@ def build_bm25():
 
 if __name__ == "__main__":
     
-    # csv_to_jsonl()
-    # build_bm25()
+    csv_to_jsonl()
+    build_bm25()
             
