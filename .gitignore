@@ -179,7 +179,8 @@ index/
 
 # defunct files kept for posterity
 *_archive*
+archive/
 
 # scratchpads
 notebooks/scratch.ipynb
-scratch.txt
+docs/scratch.txt
