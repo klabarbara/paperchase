@@ -1,46 +1,54 @@
-import json, csv, pandas as pd
+import pandas as pd, json, pathlib
 from tqdm import tqdm
 from pathlib import Path
 from pyserini.index.lucene import LuceneIndexer
 
-CSV_PATH = Path("data/raw/papersum_cleaned.csv")
-JSONL_DIR = Path("data/processed")
+CSV_PATH  = pathlib.Path("data/processed/papersum_clean.csv")
+JSONL_DIR = pathlib.Path("data/processed/jsonl"); JSONL_DIR.mkdir(exist_ok=True)
+
+cols = ["paperID","title","abstract","venue","year","conclusion"]
+
 INDEX_DIR = Path("index/bm25")
 
 JSONL_DIR.mkdir(parents=True, exist_ok=True)
 INDEX_DIR.mkdir(parents=True, exist_ok=True)
 
-def sniff_csv(input_path):
-    with open(input_path, 'r', encoding='utf-8', errors='replace') as infile:
-        sample = infile.read(1024)  # Read a chunk to analyze
-        dialect = csv.Sniffer().sniff(sample)
-        print("Detected Dialect:")
-        print(f"Delimiter: {repr(dialect.delimiter)}")
-        print(f"Quotechar: {repr(dialect.quotechar)}")
-        print(f"Escapechar: {repr(dialect.escapechar)}")
 
+# some abstracts are not present. treat NaN as empty string so lucene can process it
+def safe(val):
+    if val is None:
+        return ""
+    try:
+        import math, numpy as np
+        if isinstance(val, (float, np.floating)) and math.isnan(val):
+            return ""
+    except Exception:
+        pass
+    return val
 
 def csv_to_jsonl():
     print("Converting CSV to JSONL files...")
 
-    total_rows = sum(1 for _ in open(CSV_PATH)) - 1  # subtract header
     try:
-        for chunk in tqdm(pd.read_csv(CSV_PATH, chunksize=50_000, quotechar='"', escapechar='\\', engine='python'), total=(total_rows // 50_000) + 1, desc="Processing CSV Chunks"):
-            try:
-                for _, row in chunk.iterrows():
-                    doc = {
-                        "id": row.paperID,
-                        "title": row.title,
-                        "abstract": row.abstract,
-                        "venue": row.venue,
-                        "year":  row.year,
-                        "text":  f"{row.title}. {row.abstract} {row.conclusion or ''}"
-                    }
-                    out = JSONL_DIR / f"{doc['id']}.json"
-                    with open(out, 'w', encoding='utf-8') as f:
-                        f.write(json.dumps(doc))
-            except Exception as e:
-                print(f"error processing row: {e}")
+        for chunk in tqdm(
+                pd.read_csv(CSV_PATH, usecols=cols, chunksize=50_000, dtype=str),
+                desc="Converting to JSONL"
+            ):
+            # build the 'text' column in one shot
+            chunk["text"] = chunk["title"] + ". " + chunk["abstract"].fillna("") + \
+                            " " + chunk["conclusion"].fillna("")
+            for rec in chunk.to_dict(orient="records"):
+                out = JSONL_DIR / f"{rec['paperID']}.json"
+                out.write_text(json.dumps({
+                    "id":        rec["paperID"],
+                    "title":     rec["title"],
+                    "abstract":  safe(rec["abstract"]),
+                    "venue":     rec["venue"],
+                    "year":      rec["year"],
+                    "text":      rec["text"],
+                    "contents":  f"{rec['title']} {rec['abstract']} {rec['text']}"
+                }, allow_nan=False), encoding="utf‑8")
+
     except Exception as e:
         print(f"error during csv to jsonl conversion: {e}")
 
