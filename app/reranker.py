@@ -1,4 +1,5 @@
 from sentence_transformers import CrossEncoder
+from typing import List, Tuple
 
 """
 cross encoder reranker
@@ -26,11 +27,11 @@ class Reranker:
         returns
         list of tuples (doc_id, bm25 score, cross_score) sorted descending by cross-encoder score
         """
-        pairs = [(query, d[0]) for d in docs]
+        pairs = [(query, d[1]) for d in docs]
 
         # vectorised relevance prediction (returns 1d numpy array)
         cross_scores = self.model.predict(pairs, convert_to_numpy=True)
 
 
-        reranked = sorted(zip(docs, scores), key=lambda x: x[1], reverse=True)
-        return [(doc_id, bm25, float(score)) for ((doc_id, bm25), score) in reranked]
+        reranked = sorted(zip(docs, cross_scores), key=lambda x: x[1], reverse=True)
+        return [(doc_id, bm25, float(score)) for ((doc_id, _text, bm25), score) in reranked]

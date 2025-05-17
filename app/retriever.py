@@ -8,7 +8,7 @@ single call returns a list of
 """
 class Retriever:
     def __init__(self, index_dir, top_k=100):
-        self.searcher = LuceneSearcher(index_dir)
+        self.searcher = LuceneSearcher(str(index_dir))
         self.top_k = top_k
         
     def __call__(self, query):
