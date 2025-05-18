@@ -181,6 +181,7 @@ index/
 *_archive*
 archive/
 
-# scratchpads
-notebooks/scratch.ipynb
+# scratchpads and notebooks
+notebooks/
+notebooks/eda.ipynb
 docs/scratch.txt
