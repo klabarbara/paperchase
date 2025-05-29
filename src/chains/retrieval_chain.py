@@ -4,9 +4,12 @@ from langchain.vectorstores import Chroma
 from langchain_core.runnables import RunnableParallel
 from langchain_community.utilities.arxiv import ArxivAPIWrapper
 from langchain_community.document_loaders import ArxivLoader
+from pathlib import Path
 
 from .keyword_chain import build_keyword_chain
 from ..config import settings
+
+CHROMA_DIR = Path(".chroma_full")
 
 def _docs_from_api_wrapper(query: str, k: int) -> list[Document]:
     wrapper = ArxivAPIWrapper(load_max_docs=k)
@@ -44,11 +47,20 @@ def build_retrieval_chain(use_full_docs: bool = False):
         azure_deployment=settings.embed_deployment,
     )
 
-    vectordb = Chroma(
-        collection_name="scratch",
-        embedding_function=emb,
-        persist_directory=None, # mem only
-    )
+    if CHROMA_DIR.exists():
+        # loads prebuilt index for papersum dataset
+        vectordb = Chroma(
+            collection_name="cs_papersum",
+            embedding_function=emb,
+            persist_directory=str(CHROMA_DIR),
+        )
+    else:
+        # prototyping fallback - build ad hoc temp index 
+        vectordb = Chroma(
+            collection_name="scratch",
+            embedding_function=emb,
+            persist_directory=None, # mem only
+        )
     
     def retrieve(user_query: str) -> list[Document]:
         docs = fetch_docs(user_query)
