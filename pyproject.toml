@@ -1,0 +1,18 @@
+[project]
+name = "cs-rag"
+version = "0.1.0"
+description = "Azure-native RAG for CS arXiv papers. Capable of custom insertion and evaluation of dense rerankers."
+requires-python = ">=3.12"
+dependencies = [
+  "langchain>=0.2.0",
+  "langchain-openai>=0.1.0",
+  "langchain-community>=0.0.34",
+  "openai>=1.30.0",
+  "pydantic>=2.7.3",
+  "python-dotenv>=1.0.1",
+  "chromadb>=0.5.0",
+  "typer>=0.9",
+]
+
+[tool.poetry]
+authors = ["klab"]
