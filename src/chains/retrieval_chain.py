@@ -47,6 +47,7 @@ def build_retrieval_chain(use_full_docs: bool = False):
         azure_deployment=settings.embed_deployment,
     )
 
+    # choose your fighter
     if CHROMA_DIR.exists():
         # loads prebuilt index for papersum dataset
         vectordb = Chroma(
