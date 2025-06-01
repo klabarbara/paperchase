@@ -8,8 +8,8 @@ assumes columns 'paper_id', 'title', and 'abstract' for now (as i know for a fac
 
 import csv, pathlib, tqdm
 from langchain.docstore.document import Document
-from langchain.embeddings import AzureOpenAIEmbeddings
-from langchain.vectorstores import Chroma
+from langchain_openai.embeddings import AzureOpenAIEmbeddings
+from langchain_chroma import Chroma
 
 from ..config import settings
 
@@ -21,6 +21,7 @@ def main():
         azure_endpoint=settings.azure_endpoint,
         api_key=settings.azure_key,
         azure_deployment=settings.embed_deployment,
+        model=settings.embed_deployment,
     )
     vectordb = Chroma(
         collection_name="cs_papersum",
