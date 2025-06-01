@@ -12,11 +12,12 @@ app = typer.Typer(help="Query CS arXiv with RAG")
 @app.command()
 def query(q: str, top: int = 5):
     retr_chain = build_retrieval_chain()
-    docs = retr_chain.run(q)
-    docs = docs[:top]
+    result = retr_chain.invoke(q)
+    docs = result["docs"][:top]
 
     summ_chain = build_summary_chain()
-    summaries = summ_chain.map_reduce_docs(docs)
+    summaries = summ_chain.invoke(docs)
+    summaries = summaries['output_text']
 
     for doc, summ in zip(docs, summaries):
         rich.print(f"[bold]{doc.metadata.get('title','(no title)')}[/bold]")

@@ -12,6 +12,8 @@ def build_keyword_chain():
         azure_endpoint=settings.azure_endpoint,
         api_key=settings.azure_key,
         deployment_name=settings.chat_deployment,
+        model_name=settings.chat_deployment,
+        api_version=settings.chat_api_version, 
         temperature=0.1,
     )
-    return LLMChain(prompt=_PROMPT, llm=llm)
+    return _PROMPT | llm
