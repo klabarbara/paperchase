@@ -23,7 +23,8 @@ def retireval_scores(pred_ids: List[str], gold_ids: List[str]) -> Dict[str, floa
 _FAITHFUL_LLM = AzureChatOpenAI(
     azure_endpoint=settings.azure_endpoint,
     api_key=settings.azure_key,
-    azure_deployment=settings.chat_deployment,
+    deployment_name=settings.chat_deployment,
+    model_name=settings.chat_deployment,
     temperature=0.0,
 )
 faithfulness = load_evaluator("faithfulness", llm=_FAITHFUL_LLM)
