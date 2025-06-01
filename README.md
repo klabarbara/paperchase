@@ -26,4 +26,7 @@ az storage account create -g cs‑rag‑rg -n csragsa --sku Standard_LRS
 func azure functionapp publish cs‑rag‑func -g cs‑rag‑rg --python
 ```
 
-# TODO: evaluation/metric explanation go here
+## TODO: evaluation/metric explanation go here
+```bash
+python -m src.eval.run_eval
+```
