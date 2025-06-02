@@ -12,25 +12,61 @@ from ..config import settings
 
 CHROMA_DIR = Path(".chroma_full")
 
+# api results returned in one string, with each doc separated by \n\n
+# and metadata labels embedded within the string
 def _docs_from_api_wrapper(query: str, k: int) -> list[Document]:
     wrapper = ArxivAPIWrapper(load_max_docs=k)
-    # wrapper.run returns one string, so split on "\n\n" between papers
-    summaries = wrapper.run(query).split("\n\n")
+    raw_output = wrapper.run(query)
+
+    blocks = raw_output.strip().split("\n\n") # each paper is a block
     docs = []
-    for block in summaries:
-        # first line is title, second is URL
-        parts = block.strip().splitlines()
-        if len(parts) >= 3:
-            docs.append(
-                Document(
-                    page_content="\n".join(parts[2:]), # summary paragraph
-                    metadata={"title": parts[0], "url": parts[1]}
-                )
-            )
+
+    for block in blocks:
+        published = title = summary = url = None # lol
+        lines = block.strip().splitlines()
+
+        for line in lines:
+            if line.startswith("Published:"):
+                published = line.replace("Published:", "").strip()
+            elif line.startswith("Title:"):
+                title = line.replace("Title:", "").strip()
+            elif line.startswith("Authors:"):
+                continue
+            elif line.startswith("Link:"):
+                url = line.replace("Link:", "").strip()
+            else:
+                summary = (summary or "") + line.replace("Summary:", "").strip() + " "
+        
+        if title and summary:
+            docs.append(Document(
+                page_content=summary.strip(),
+                metadata={
+                    "title": title,
+                    "published": published or "unknown",
+                    "url": url or "",
+                }
+            ))
+
     return docs
 
+# full doc loader has metadata to directly access
 def _docs_from_loader(query: str, k: int) -> list[Document]:
-    return ArxivLoader(query=query, load_max_docs=k).load()
+    raw_docs = ArxivLoader(query=query, load_max_docs=k).load()
+
+    # arxivloader already includes metadata keys 'Title' and 'Published'
+    docs =[]
+    for d in raw_docs:
+        docs.append(
+            Document(
+                page_content=d.page_content,
+                metadata={
+                    "title": d.metadata.get("Title"),
+                    "url": d.metadata.get("Entry ID"), # entry_id?
+                    "published": d.metadata.get("Published"),
+                }
+            )
+        )
+    return docs
 
 def build_retrieval_chain(use_full_docs: bool = False):
 
@@ -62,25 +98,10 @@ def build_retrieval_chain(use_full_docs: bool = False):
         azure_endpoint=settings.azure_endpoint,
         api_key=settings.azure_key,
         azure_deployment=settings.embed_deployment,
+        model=settings.embed_deployment,
         api_version=settings.embed_api_version, 
         chunk_size=512,
     )
-
-    # choose your fighter
-    if CHROMA_DIR.exists():
-        # loads prebuilt index for papersum dataset
-        vectordb = Chroma(
-            collection_name="cs_papersum",
-            embedding_function=emb,
-            persist_directory=str(CHROMA_DIR),
-        )
-    else:
-        # prototyping fallback - build ad hoc temp index 
-        vectordb = Chroma(
-            collection_name="scratch",
-            embedding_function=emb,
-            persist_directory=None, # mem only
-        )
     
     def retrieve(user_query: str) -> list[Document]:
         docs = fetch_docs(user_query)
@@ -90,13 +111,8 @@ def build_retrieval_chain(use_full_docs: bool = False):
         
         vectordb = Chroma(
             collection_name="arxiv_tmp",
-            embedding_function=AzureOpenAIEmbeddings(
-                azure_endpoint=settings.azure_endpoint,
-                api_key=settings.azure_key,
-                azure_deployment=settings.embed_deployment,
-                api_version=settings.embed_api_version,
-            ),
-            persist_directory=None # avoiding persisting in memory to start
+            embedding_function=emb,
+            persist_directory=".chroma_tmp" # avoiding persisting in memory to start
         )
 
         vectordb.reset_collection()
