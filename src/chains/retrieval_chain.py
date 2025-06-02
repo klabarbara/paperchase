@@ -6,15 +6,29 @@ from langchain_community.utilities.arxiv import ArxivAPIWrapper
 from langchain_community.document_loaders import ArxivLoader
 from pathlib import Path
 import re
+import hashlib
 
 from .keyword_chain import build_keyword_chain
 from ..config import settings
 
 CHROMA_DIR = Path(".chroma_full")
+    
+def make_doc_id(title: str, published: str, summary: str) -> str:
+    key = f"{title.strip()}|{published.strip()}|{summary.strip()}"
+    return hashlib.md5(key.encode("utf-8")).hexdigest()
 
-# api results returned in one string, with each doc separated by \n\n
-# and metadata labels embedded within the string
+
+"""
+Option to utilize ArxivAPIWrapper to avoid ArxivLoader's behavior
+of retrieving full papers. 
+
+Results are returned in one string, with each doc separated by \n\n
+and metadata labels embedded within the string. Since arxiv id is not
+included in these results, unique id is formed by hashing the document
+contents. 
+"""
 def _docs_from_api_wrapper(query: str, k: int) -> list[Document]:
+
     wrapper = ArxivAPIWrapper(load_max_docs=k)
     raw_output = wrapper.run(query)
 
@@ -22,7 +36,7 @@ def _docs_from_api_wrapper(query: str, k: int) -> list[Document]:
     docs = []
 
     for block in blocks:
-        published = title = summary = url = None # lol
+        published = title = summary = None
         lines = block.strip().splitlines()
 
         for line in lines:
@@ -30,21 +44,21 @@ def _docs_from_api_wrapper(query: str, k: int) -> list[Document]:
                 published = line.replace("Published:", "").strip()
             elif line.startswith("Title:"):
                 title = line.replace("Title:", "").strip()
-            elif line.startswith("Authors:"):
-                continue
-            elif line.startswith("Link:"):
-                url = line.replace("Link:", "").strip()
             else:
                 summary = (summary or "") + line.replace("Summary:", "").strip() + " "
         
+        # stable id generated
+        arxiv_id = make_doc_id(title=title, published=published, summary=summary)
+
         if title and summary:
             docs.append(Document(
                 page_content=summary.strip(),
                 metadata={
                     "title": title,
                     "published": published or "unknown",
-                    "url": url or "",
-                }
+                    "arxiv_id": arxiv_id
+                },
+                id=arxiv_id
             ))
 
     return docs
@@ -54,6 +68,10 @@ def _docs_from_loader(query: str, k: int) -> list[Document]:
     raw_docs = ArxivLoader(query=query, load_max_docs=k).load()
 
     # arxivloader already includes metadata keys 'Title' and 'Published'
+    # TODO: what is the field for its Arxiv ID? 
+    # goal is to set these Documents' unique IDs to their arxiv id,
+    # which will diferentiate fully-loaded documents from the summaries
+    # pulled using ArxivAPIWrapper
     docs =[]
     for d in raw_docs:
         docs.append(
@@ -63,7 +81,9 @@ def _docs_from_loader(query: str, k: int) -> list[Document]:
                     "title": d.metadata.get("Title"),
                     "url": d.metadata.get("Entry ID"), # entry_id?
                     "published": d.metadata.get("Published"),
-                }
+                    "arxiv_id": d.metadata.get("arxiv_id") # this will break if the field is wrong
+                },
+                id=d.metadata.get("arxiv_id") # this will break if the field is wrong
             )
         )
     return docs
@@ -103,20 +123,20 @@ def build_retrieval_chain(use_full_docs: bool = False):
         chunk_size=512,
     )
     
+    vectordb = Chroma(
+        collection_name="arxiv_tmp",
+        embedding_function=emb,
+        persist_directory=".chroma_tmp" # local cacheing to avoid excessive calls
+    )
+
     def retrieve(user_query: str) -> list[Document]:
         docs = fetch_docs(user_query)
         
         if not docs:
             raise ValueError("no documents returned from fetch_docs")
-        
-        vectordb = Chroma(
-            collection_name="arxiv_tmp",
-            embedding_function=emb,
-            persist_directory=".chroma_tmp" # avoiding persisting in memory to start
-        )
 
-        vectordb.reset_collection()
         vectordb.add_documents(docs)
+
         return vectordb.similarity_search(user_query, k=5)
     
     # chain now user_query to retrieve to docs
