@@ -1,27 +1,32 @@
 # paperchase
 Recommendation system for background reading
 
-# MVP
+# Langchain/Azure Update (v0.2)
 
-## Ingestion:
+An Azure‑native LangChain application that retrieves computer‑science papers from arXiv, ranks them, and returns concise summaries.
 
-Dataset has two significant out-of-the-box processing issues:
+* **Runtime:** Azure Functions (Python 4 model)  
+* **LLM + embeddings:** Azure OpenAI (gpt‑4o‑mini, text‑embedding‑3‑small)  
+* **Vector store:** Chroma (local) — swap for Azure AI Search later  
+* **Infrastructure as Code:** Azure CLI snippets in this README  
 
-- Fields with multiple new lines getting broken up into separate fields, misaligning the dataset
-    To solve, install csvkit. In macos: `brew install csvkit`
-    Run `csvclean --lenient -a paperSum.csv`
+## Quick start (local)
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env  # fill in Azure keys + arXiv email
+python -m cs_rag.cli query "good CS paper for Mandarin‑English RAG"
+```
 
-- Some abstract fields are empty, which pandas processes as NaN. build_index.py script accounts for this by safely parsing and returning an empty string for the field. 
+## Deploy to Azure Functions
+```bash
+az login
+az group create -n cs‑rag‑rg -l eastus
+az storage account create -g cs‑rag‑rg -n csragsa --sku Standard_LRS
+func azure functionapp publish cs‑rag‑func -g cs‑rag‑rg --python
+```
 
-Lucene uses Java, so check to see if JVM is installed:
-java -version
-
-paperchase uses JDK 17, which can be installed (macos):
-
-`brew install openjdk@17`
-
-Win/linux please refer to openjdk.org
-
-References (with paper has dataset download):
-
-- Liu, J., Vats, A., & He, Z. (2025). CS-PaperSum: A Large-Scale Dataset of AI-Generated Summaries for Scientific Papers. arXiv:2502.20582. [![arXiv](https://img.shields.io/badge/arXiv-2502.20582-b31b1b.svg)](https://arxiv.org/abs/2502.20582)
+## TODO: evaluation/metric explanation go here
+```bash
+python -m src.eval.run_eval
+```
