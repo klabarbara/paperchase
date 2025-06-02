@@ -129,15 +129,32 @@ def build_retrieval_chain(use_full_docs: bool = False):
         persist_directory=".chroma_tmp" # local cacheing to avoid excessive calls
     )
 
+    # checks doc ids against ids in vectordb before adding them 
+    # (and using azure embedding tokens)
+    def upsert_docs(docs):
+        ids = [d.id for d in docs]
+
+        existing = set(vectordb._collection.get(
+            ids=ids, include=[]
+        )["ids"])
+
+        new_docs = [d for d in docs if d.id not in existing]
+
+        if new_docs:
+            vectordb.add_documents(new_docs)  
+
     def retrieve(user_query: str) -> list[Document]:
         docs = fetch_docs(user_query)
         
         if not docs:
             raise ValueError("no documents returned from fetch_docs")
 
-        vectordb.add_documents(docs)
+        upsert_docs(docs)
+        ids_this_run = [d.metadata["arxiv_id"] for d in docs]
 
-        return vectordb.similarity_search(user_query, k=5)
+        return vectordb.similarity_search(user_query, 
+                                          k=5,
+                                          filter={"arxiv_id": {"$in": ids_this_run}})
     
     # chain now user_query to retrieve to docs
     return RunnableParallel({"docs": retrieve})
