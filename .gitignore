@@ -181,7 +181,9 @@ index/
 *_archive*
 archive/
 
-# scratchpads and notebooks
-notebooks/
-notebooks/eda.ipynb
-docs/scratch.txt
+# chroma temp directory
+.chroma_tmp
+
+# vscode settings and macos stuff
+.DS_Store
+.vscode
