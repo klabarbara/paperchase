@@ -6,34 +6,47 @@ from langchain_core.documents import Document
 
 from ..config import settings
 
-# note: standard retrieval metrics. recall included in spite of dubious usefulness
-# when dealing with small k size in a larger corpus. please refer to readme for more information
-precision_at5 = load_evaluator("retrieval_precision", k=5)
-recall_at5 = load_evaluator("retrieval_recall", k=5)
-mrr_at10 = load_evaluator("retrieval_mrr", k=10)
+# DIY metrics since I can't find where tf they are in langchain/smith (TODO)
+def _precision_at_k(pred: List[str], gold: List[str], k: int) -> float:
+    return sum(1 for p in pred[:k] if p in gold) / k
 
-def retireval_scores(pred_ids: List[str], gold_ids: List[str]) -> Dict[str, float]:
+def _recall_at_k(pred: List[str], gold: List[str], k: int) -> float:
+    if not gold:               
+        return 1.0
+    return sum(1 for p in pred[:k] if p in gold) / len(gold)
+
+def _mrr_at_k(pred: List[str], gold: List[str], k: int) -> float:
+    for rank, p in enumerate(pred[:k], 1):
+        if p in gold:
+            return 1.0 / rank
+    return 0.0
+
+def retrieval_scores(pred_ids: List[str], gold_ids: List[str]) -> Dict[str, float]:
     return {
-        "precision@5": precision_at5.evaluate(pred_ids, gold_ids),
-        "recall@5": recall_at5.evaluate(pred_ids, gold_ids),
-        "mrr@10": mrr_at10.evaluate(pred_ids, gold_ids),
+        "precision@5": _precision_at_k(pred_ids, gold_ids, 5),
+        "recall@5":    _recall_at_k(pred_ids, gold_ids, 5),
+        "mrr@10":      _mrr_at_k(pred_ids,   gold_ids, 10),
     }
 
 # generative (reader) metrics
 _FAITHFUL_LLM = AzureChatOpenAI(
     azure_endpoint=settings.azure_endpoint,
     api_key=settings.azure_key,
+    api_version=settings.chat_api_version,
     deployment_name=settings.chat_deployment,
     model_name=settings.chat_deployment,
     temperature=0.0,
 )
-faithfulness = load_evaluator("faithfulness", llm=_FAITHFUL_LLM)
+
+
 
 def summary_scores(query: str, docs: List[Document], summary: str) -> Dict[str, float]:
     """
     docs = the chunks fed to reader (ground truth for faithfulness)
     summary = reader output
     """
+    faithfulness = load_evaluator("faithfulness", llm=_FAITHFUL_LLM) # move outside once summary included?
+
     res = faithfulness.evaluate(
         question=query,
         contexts=[d.page_content for d in docs],

@@ -15,7 +15,6 @@ class Settings(BaseSettings):
     embed_deployment: str = Field("text-embedding-3-small", alias="AZURE_OPENAI_EMBED_DEPLOYMENT")
     chat_api_version: str = Field(..., alias="AZURE_OPENAI_CHAT_API_VERSION")
     embed_api_version: str = Field(..., alias="AZURE_OPENAI_EMBED_API_VERSION")
-    
     model_config = {
         "case_sensitive": False,   
         "env_file": ".env",

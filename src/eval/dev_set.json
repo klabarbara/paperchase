@@ -1,0 +1,146 @@
+[
+  {
+    "query": "Best resources to build a Mandarin-English retrieval-augmented speech generation pipeline",
+    "gold_ids": ["2409.08597", "2502.11022"]
+  },
+  {
+    "query": "Show me LoRA-based innovations that reduce fine-tuning cost on large language models?",
+    "gold_ids": ["2506.00799", "2506.00743", "2503.00572"]
+  },
+  {
+    "query": "Explain the concept of Dual-Knowledge Multilingual RAG",
+    "gold_ids": ["2502.11175"]
+  },
+  {
+    "query": "What role could QLoRA have in improving RAG reranking?",
+    "gold_ids": ["2505.03406"]
+  },
+  {
+    "query": "How can I combine decision transformer architecture with LLM fine tuning for control tasks?",
+    "gold_ids": ["2505.01841", "2404.02407", "2310.20587"]
+  },
+  {
+    "query": "Survey of cross lingual retrieval bias mitigation methods",
+    "gold_ids": ["2408.10536", "2502.03220", "2505.14160", "2410.21970"]
+  },
+  {
+    "query": "Using knowledge graphs to enhance RAG",
+    "gold_ids": ["2506.01954", "2506.01232", "2506.00664"]
+  },
+  {
+    "query": "How to generalize LLM tool use",
+    "gold_ids": ["2408.08435", "2402.04253", "2302.04761", "2506.01839", "2506.01900"]
+  },
+  {
+    "query": "Making an agentic system browse the web",
+    "gold_ids": ["2506.01952", "2506.01616", "2506.00520", "2505.22648,"]
+  },
+  {
+    "query": "How can I use an RL agent to optimize my code?",
+    "gold_ids": ["2506.01880", "2506.01716"]
+  },
+  {
+    "query": "What are some alternatives to PPO?",
+    "gold_ids": ["2505.15311", "2504.11343", "2505.22453,"]
+  },
+  {
+    "query": "spatial reasoning vlm?",
+    "gold_ids": ["2401.12168", "2504.02799", "2506.01371", "2505.24257", "2506.01946"]
+  },
+  {
+    "query": "How can I leverage reranking in VLM?",
+    "gold_ids": ["2505.22019", "2505.22584"]
+  },
+  {
+    "query": "RL with video language understanding videollms",
+    "gold_ids": ["2506.01908"]
+  },
+  {
+    "query": "Describe the concept of cross-lingual generalization for mllm?",
+    "gold_ids": ["2505.19714", "2505.15722"]
+  },
+  {
+    "query": "How to improve visual grounding in instructional mllm",
+    "gold_ids": ["2506.01850", "2506.01946", "2505.23977"]
+  },
+  {
+    "query": "Can I combine LoRA and flash attention",
+    "gold_ids": ["2505.0002"]
+  },
+  {
+    "query": "What role could LoRA play with decision transformers?",
+    "gold_ids": ["2411.17900", "2408.01402"]
+  },
+  {
+    "query": "How can I benchmark different fine-tuning methods like LoRA?",
+    "gold_ids": ["2505.13840"]
+  },
+  {
+    "query": "Show me some studies that combine quantization with RAG",
+    "gold_ids": ["2505.22752", "2505.03406", "2505.00105", "2504.11514"]
+  },
+  {
+    "query": "Grpo with adversarial training",
+    "gold_ids": ["2505.06284"]
+  },
+  {
+    "query": "How can I employ adversarial training on rag-based vlms?",
+    "gold_ids": ["2505.23828", "2503.06254"]
+  },
+  {
+    "query": "show me papers that use self-verification for post-training alignment?",
+    "gold_ids": ["2506.01369", "2504.13169"]
+  },
+  {
+    "query": "What are some examples of using LLMs for red-teaming?",
+    "gold_ids": ["2506.00782", "2506.00359", "2506.00781"]
+  },
+  {
+    "query": "Are there agentic models that train adversarially?",
+    "gold_ids": ["2506.00172", "2505.24239"]
+  },
+  {
+    "query": "Find papers for benchmarks for multi-lingual or cross-lingual model evaluation",
+    "gold_ids": ["2506.01776", "2506.00087", "2505.11275", "2506.01668"]
+  },
+  {
+    "query": "Find some examples of RAG model benchmarks",
+    "gold_ids": ["2506.01646", "2506.01954", "2506.01615", "2506.00789"]
+  },
+  {
+    "query": "Benchmarks for LLM environmental, social, and governance (ESG)",
+    "gold_ids": ["2506.01646", "2503.10674"]
+  },
+  {
+    "query": "What are benchmarks for MLLM based navigation?",
+    "gold_ids": ["2506.01031", "2505.17295", "2505.16579"]
+  },
+  {
+    "query": "What are some innovations in dataset quality evaluation?",
+    "gold_ids": ["2506.01793", "2506.01789"]
+  },
+  {
+    "query": "Explain the concept of RAG for homomorphic-encryption of sonar data",
+    "gold_ids": []
+  },
+  {
+    "query": "What are some Portuguese–Klingon cross-lingual RAG pipeline benchmarks?",
+    "gold_ids": []
+  },
+  {
+    "query": "Show me MLLM systems accepted at NeurIPS 1999",
+    "gold_ids": []
+  },
+  {
+    "query": "Find a paper on LoRA for LLM trained bioacoustic data",
+    "gold_ids": []
+  },
+  {
+    "query": "What is a Agentic tool for genetic navigation of ancient babylonian?",
+    "gold_ids": []
+  },
+  {
+    "query": "Adversarial training of grpo for environmental social and governance (ESG)",
+    "gold_ids": []
+  }
+]
