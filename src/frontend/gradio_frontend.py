@@ -56,6 +56,7 @@ def run_query(query: str, k: int, want_summary: bool) -> str:
 title_md = "# Paperchase - arXiv RAG Search"
 subtitle_md = "## Let's get that read!"
 
+# TODO: make legible
 description_md = (
     "Enter a natural-language question about computer-science research. "
     "Paperchase will:\
@@ -89,7 +90,7 @@ with gr.Blocks(title="Paperchase arXiv RAG Search") as demo:
         summary_check = gr.Checkbox(
             label="Generate GPT summary for each paper", value=False, scale=1
         )
-
+    # TODO: fixed % max width for button? 
     search_btn = gr.Button("Search", variant="primary")
     output_md = gr.Markdown()
 
