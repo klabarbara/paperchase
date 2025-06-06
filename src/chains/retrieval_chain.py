@@ -13,19 +13,19 @@ from ..config import settings
 
 CHROMA_DIR = Path(".chroma_full")
     
-def make_doc_id(title: str, published: str, summary: str) -> str:
-    key = f"{title.strip()}|{published.strip()}|{summary.strip()}"
+def make_doc_id(title: str, published: str) -> str:
+    key = f"{title.strip()}|{published.strip()}"
     return hashlib.md5(key.encode("utf-8")).hexdigest()
 
 
 """
-Option to utilize ArxivAPIWrapper to avoid ArxivLoader's behavior
-of retrieving full papers. 
+NOTE: arXiv IDs are NOT included with ArxivAPIWrapper returns
+TODO: Remove this option once gpt4o endpoint is replaced with something cheaper
 
-Results are returned in one string, with each doc separated by \n\n
-and metadata labels embedded within the string. Since arxiv id is not
-included in these results, unique id is formed by hashing the document
-contents. 
+Default option to retrieve truncated paper info. Results returned in one string, with
+each doc separated by double newline \n\n. Metadata labels are embedded within
+string. Since arxiv id is not included in these results, unique id is formed by
+hashing the document title and publication date. 
 """
 def _docs_from_api_wrapper(query: str, k: int) -> list[Document]:
 
@@ -48,7 +48,7 @@ def _docs_from_api_wrapper(query: str, k: int) -> list[Document]:
                 summary = (summary or "") + line.replace("Summary:", "").strip() + " "
         
         # stable id generated
-        arxiv_id = make_doc_id(title=title, published=published, summary=summary)
+        arxiv_id = make_doc_id(title=title, published=published)
 
         if title and summary:
             docs.append(Document(
