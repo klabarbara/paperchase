@@ -88,6 +88,7 @@ def _docs_from_loader(query: str, k: int) -> list[Document]:
         )
     return docs
 
+# this is a mess. TODO: refactor when unifying id methods/hooking in open source models
 def build_retrieval_chain(use_full_docs: bool = False):
 
     # fetch_docs's keywords are in markdown, needs to be cleaned
