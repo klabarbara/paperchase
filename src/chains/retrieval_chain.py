@@ -1,5 +1,6 @@
 from langchain_core.documents import Document
 from langchain_openai.embeddings import AzureOpenAIEmbeddings
+from langchain.embeddings import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from langchain_core.runnables import RunnableParallel
 from langchain_community.utilities.arxiv import ArxivAPIWrapper
@@ -123,7 +124,14 @@ def build_retrieval_chain(use_full_docs: bool = False):
         api_version=settings.embed_api_version, 
         chunk_size=512,
     )
-    
+
+    # build ad-hoc vector store for docs
+     emb = HuggingFaceEmbeddings(
+        model_name="hkunlp/instructor-small",
+        model_kwargs={"device": "cpu"},
+        encode_kwargs={"normalize_embeddings": True},
+    )
+
     vectordb = Chroma(
         collection_name="arxiv_tmp",
         embedding_function=emb,
