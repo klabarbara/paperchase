@@ -32,9 +32,9 @@ python -m cs_rag.cli query "good CS paper for Mandarin‑English RAG"
 ## Deploy to Azure Functions
 ```bash
 az login
-az group create -n cs‑rag‑rg -l eastus
-az storage account create -g cs‑rag‑rg -n csragsa --sku Standard_LRS
-func azure functionapp publish cs‑rag‑func -g cs‑rag‑rg --python
+az group create -n paperchase-rg -l eastus
+az storage account create -g paperchase-rg -n paperchasesa --sku Standard_LRS
+func azure functionapp publish paperchase‑func -g paperchase-rg --python
 ```
 
 ## TODO: evaluation/metric explanation go here
