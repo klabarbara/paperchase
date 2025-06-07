@@ -26,7 +26,7 @@ An Azure‑native LangChain application that retrieves computer‑science papers
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env  # fill in Azure keys + arXiv email
-python -m cs_rag.cli query "good CS paper for Mandarin‑English RAG"
+python -m src.cli "good CS paper for Mandarin‑English RAG"
 ```
 
 ## Deploy to Azure Functions
