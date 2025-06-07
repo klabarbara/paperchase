@@ -1,9 +1,14 @@
 ---
 title: paperchase
-app_file: src/frontend/gradio_frontend.py
 sdk: gradio
 sdk_version: 5.32.1
+app_file: src/frontend/gradio_frontend.py
 ---
+
+
+
+---
+
 # paperchase
 Recommendation system for background reading
 
