@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import traceback
-from pathlib import Path
 import gradio as gr
 
 from src.chains.retrieval_chain import build_retrieval_chain
