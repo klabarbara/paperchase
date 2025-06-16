@@ -1,13 +1,12 @@
-from langchain_core.documents import Document
-from langchain_openai.embeddings import AzureOpenAIEmbeddings
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain_chroma import Chroma
-from langchain_core.runnables import RunnableParallel
-from langchain_community.utilities.arxiv import ArxivAPIWrapper
-from langchain_community.document_loaders import ArxivLoader
-from pathlib import Path
 import re
 import hashlib
+from pathlib import Path
+
+from langchain_core.documents import Document
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_chroma import Chroma
+from langchain_core.runnables import RunnableParallel
+from langchain_community.document_loaders import ArxivLoader
 
 from .keyword_chain import build_keyword_chain
 from ..config import settings
@@ -19,62 +18,16 @@ def make_doc_id(title: str, published: str) -> str:
     return hashlib.md5(key.encode("utf-8")).hexdigest()
 
 
-"""
-NOTE: arXiv IDs are NOT included with ArxivAPIWrapper returns
-TODO: Remove this option once gpt4o endpoint is replaced with something cheaper
-
-Default option to retrieve truncated paper info. Results returned in one string, with
-each doc separated by double newline \n\n. Metadata labels are embedded within
-string. Since arxiv id is not included in these results, unique id is formed by
-hashing the document title and publication date. 
-"""
-def _docs_from_api_wrapper(query: str, k: int) -> list[Document]:
-
-    wrapper = ArxivAPIWrapper(load_max_docs=k)
-    raw_output = wrapper.run(query)
-
-    blocks = raw_output.strip().split("\n\n") # each paper is a block
-    docs = []
-
-    for block in blocks:
-        published = title = summary = None
-        lines = block.strip().splitlines()
-
-        for line in lines:
-            if line.startswith("Published:"):
-                published = line.replace("Published:", "").strip()
-            elif line.startswith("Title:"):
-                title = line.replace("Title:", "").strip()
-            else:
-                summary = (summary or "") + line.replace("Summary:", "").strip() + " "
-        
-        # stable id generated
-        arxiv_id = make_doc_id(title=title, published=published)
-
-        if title and summary:
-            docs.append(Document(
-                page_content=summary.strip(),
-                metadata={
-                    "title": title,
-                    "published": published or "unknown",
-                    "arxiv_id": arxiv_id
-                },
-                id=arxiv_id
-            ))
-
-    return docs
-
 # full doc loader has metadata to directly access
+# api_wrapper variant removed now that spend is no longer
+# tied to token count
 def _docs_from_loader(query: str, k: int) -> list[Document]:
     raw_docs = ArxivLoader(query=query, load_max_docs=k).load()
 
-    # arxivloader already includes metadata keys 'Title' and 'Published'
-    # TODO: what is the field for its Arxiv ID? 
-    # goal is to set these Documents' unique IDs to their arxiv id,
-    # which will diferentiate fully-loaded documents from the summaries
-    # pulled using ArxivAPIWrapper
     docs =[]
     for d in raw_docs:
+        arxiv_id = d.metadata.get("arxiv_id") or make_doc_id(d.metadata.get("Title", ""), d.metadata.get("Published", ""))
+
         docs.append(
             Document(
                 page_content=d.page_content,
@@ -82,88 +35,78 @@ def _docs_from_loader(query: str, k: int) -> list[Document]:
                     "title": d.metadata.get("Title"),
                     "url": d.metadata.get("Entry ID"), # entry_id?
                     "published": d.metadata.get("Published"),
-                    "arxiv_id": d.metadata.get("arxiv_id") # this will break if the field is wrong
+                    "arxiv_id": arxiv_id
                 },
-                id=d.metadata.get("arxiv_id") # this will break if the field is wrong
+                id=arxiv_id 
             )
         )
     return docs
 
-# this is a mess. TODO: refactor when unifying id methods/hooking in open source models
-def build_retrieval_chain(use_full_docs: bool = False):
+# checks doc ids against ids in vectordb before adding them 
+# (and using azure embedding tokens)
+def upsert_docs(docs, vectordb: Chroma):
+    ids = [d.id for d in docs]
 
-    # fetch_docs's keywords are in markdown, needs to be cleaned
-    def clean_keywords(raw: str) -> str:
-        lines = raw.splitlines()
-        cleaned = [re.sub(r"\*\*(.*?)\*\*", r"\1", line).strip() for line in lines]
-        cleaned = [re.sub(r"^\d+\.\s*", "", line) for line in cleaned]
-        return ", ".join(filter(None, cleaned))
+    existing = set(vectordb._collection.get(
+        ids=ids, include=[]
+    )["ids"])
 
-    def fetch_docs(user_query: str) -> list[Document]:
-        kw_chain = build_keyword_chain()
-        msg = kw_chain.invoke({"query": user_query})
-        print("LLM response: ", msg)
+    new_docs = [d for d in docs if d.id not in existing]
 
-        raw_keywords = msg.content.strip()
-        print("extracted keywords: ", raw_keywords)
+    if new_docs:
+        vectordb.add_documents(new_docs)  
 
-        keywords = clean_keywords(raw=raw_keywords)
-        print("cleaned keywords: ", keywords)
-
-        docs = _docs_from_loader(keywords, 20) if use_full_docs else _docs_from_api_wrapper(keywords, 20)
-        print(f"retrieved {len(docs)} documents")
-        
-        return docs
+def retrieve(user_query: str, vectordb: Chroma) -> list[Document]:
+    docs = fetch_docs(user_query)
     
-    # build ad-hoc vector store for docs
-    emb = AzureOpenAIEmbeddings(
-        azure_endpoint=settings.azure_endpoint,
-        api_key=settings.azure_key,
-        azure_deployment=settings.embed_deployment,
-        model=settings.embed_deployment,
-        api_version=settings.embed_api_version, 
-        chunk_size=512,
-    )
+    if not docs:
+        raise ValueError("no documents returned from fetch_docs")
 
-    # build ad-hoc vector store for docs
-     emb = HuggingFaceEmbeddings(
-        model_name="hkunlp/instructor-small",
-        model_kwargs={"device": "cpu"},
-        encode_kwargs={"normalize_embeddings": True},
-    )
+    upsert_docs(docs, vectordb)
+    ids_this_run = [d.metadata["arxiv_id"] for d in docs]
 
+    return vectordb.similarity_search(user_query, 
+                                      k=5, 
+                                      filter={"arxiv_id": {"$in":ids_this_run}})
+
+def fetch_docs(user_query: str, use_full_docs: bool = False) -> list[Document]:
+    msg = build_keyword_chain().invoke({"query": user_query})
+    keywords = clean_keywords(raw=msg)
+    return _docs_from_loader(query=keywords, k=20)
+
+# fetch_docs's keywords are in markdown, needs to be cleaned
+def clean_keywords(raw: str) -> str:
+    lines = raw.splitlines()
+    cleaned = [re.sub(r"\*\*(.*?)\*\*", r"\1", line).strip() for line in lines]
+    cleaned = [re.sub(r"^\d+\.\s*", "", line) for line in cleaned]
+    return ", ".join(filter(None, cleaned))
+
+
+def build_retrieval_chain(use_full_docs: bool = False):
+    """
+    open-source retrieval chain
+    embeddings: instructor-base (local) or HF endpoint (remote)
+    keywords: via build_keyword_chain()
+    """
+    
+    if settings.oss_mode == "remote":
+        emb = HuggingFaceEmbeddings(
+            endpoint_url=settings.embed_endpoint,
+            huggingface_api_token=settings.embed_token,
+            task="feature-extraction",
+        )
+    else:
+        emb = HuggingFaceEmbeddings(
+            model_name="hkunlp/instructor-base",
+            model_kwargs={"device": "cpu"},
+            encode_kwargs={"normalize_embeddings": True},
+        )
+
+    # vectordb used within upsert_docs() and retrieve()
     vectordb = Chroma(
         collection_name="arxiv_tmp",
         embedding_function=emb,
-        persist_directory=".chroma_tmp" # local cacheing to avoid excessive calls
+        persist_directory=str(CHROMA_DIR) # local cacheing to avoid excessive calls
     )
-
-    # checks doc ids against ids in vectordb before adding them 
-    # (and using azure embedding tokens)
-    def upsert_docs(docs):
-        ids = [d.id for d in docs]
-
-        existing = set(vectordb._collection.get(
-            ids=ids, include=[]
-        )["ids"])
-
-        new_docs = [d for d in docs if d.id not in existing]
-
-        if new_docs:
-            vectordb.add_documents(new_docs)  
-
-    def retrieve(user_query: str) -> list[Document]:
-        docs = fetch_docs(user_query)
-        
-        if not docs:
-            raise ValueError("no documents returned from fetch_docs")
-
-        upsert_docs(docs)
-        ids_this_run = [d.metadata["arxiv_id"] for d in docs]
-
-        return vectordb.similarity_search(user_query, 
-                                          k=5,
-                                          filter={"arxiv_id": {"$in": ids_this_run}})
-    
     # chain now user_query to retrieve to docs
-    return RunnableParallel({"docs": retrieve})
+    return RunnableParallel({"docs": lambda parms: retrieve(parms["docs"], vectordb)})

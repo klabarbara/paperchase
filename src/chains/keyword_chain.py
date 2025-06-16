@@ -1,19 +1,41 @@
-from langchain_openai import AzureChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
-from langchain.chains import LLMChain
+from langchain.prompts import PromptTemplate
+from transformers import pipeline
+from langchain_huggingface import HuggingFacePipeline
+from langchain_huggingface import HuggingFaceEndpoint
+
 from ..config import settings
 
-_PROMPT = ChatPromptTemplate.from_template(
-    "List 3–6 short technical keywords for searching arXiv based on the user query: {query}"
+_PROMPT = PromptTemplate(
+    input_variables=["query"],
+    template=(
+        "Extract 3-6 concise technical keywords from the following query:\n\n"
+        "{query}\n\nKeywords:"
+    )
 )
 
 def build_keyword_chain():
-    llm = AzureChatOpenAI(
-        azure_endpoint=settings.azure_endpoint,
-        api_key=settings.azure_key,
-        deployment_name=settings.chat_deployment,
-        model_name=settings.chat_deployment,
-        api_version=settings.chat_api_version, 
-        temperature=0.1,
-    )
+    """
+    open source keyword extraction
+    in-process HF pipeline when settings.oss_mode == "local"
+    azure ML HF pipeline when settings.oss_mode == "remote"
+    """
+    if settings.oss_mode == "remote":
+        llm = HuggingFaceEndpoint(
+            endpoint_url=settings.keyword_endpoint,
+            huggingface_api_token=settings.keyword_token,
+            model_kwargs={
+                "task": "text2text-generation",
+                "max_new_tokens": 32,
+            },
+            timeout=30,
+        )
+    else:
+        hf_pipe = pipeline(
+            task="text2text-generation",
+            model="google/flan-t5-small",
+            device_map="auto",
+            max_new_tokens=32,
+        )
+        llm = HuggingFacePipeline(pipeline=hf_pipe)
+
     return _PROMPT | llm

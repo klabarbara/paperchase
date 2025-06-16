@@ -1,9 +1,11 @@
 from typing import List, Dict
+import torch
+from transformers import pipeline
 
+from langchain_huggingface import HuggingFacePipeline
+from langchain_huggingface import HuggingFaceEndpoint
 from langchain.evaluation import load_evaluator
-from langchain_openai import AzureChatOpenAI
 from langchain_core.documents import Document
-
 from ..config import settings
 
 # DIY metrics since I can't find where tf they are in langchain/smith (TODO)
@@ -28,26 +30,39 @@ def retrieval_scores(pred_ids: List[str], gold_ids: List[str]) -> Dict[str, floa
         "mrr@10":      _mrr_at_k(pred_ids,   gold_ids, 10),
     }
 
-# generative (reader) metrics
-_FAITHFUL_LLM = AzureChatOpenAI(
-    azure_endpoint=settings.azure_endpoint,
-    api_key=settings.azure_key,
-    api_version=settings.chat_api_version,
-    deployment_name=settings.chat_deployment,
-    model_name=settings.chat_deployment,
-    temperature=0.0,
-)
-
-
+try:
+    if settings.oss_mode == "remote":
+        _FAITHFUL_LLM = HuggingFaceEndpoint(
+            endpoint_url=settings.faithful_endpoint,
+            huggingface_api_toke=settings.huggingface_token,
+            model_kwargs={"task": "text-generation", "max_new_tokens": 512, "temperature": 0.0},
+            timeout=60,
+        )
+    else:
+        hf_pipe = pipeline(
+            task="text-generation",
+            model="meta-llama/Llama-2-7b-chat-hf",
+            device_map="auto",
+            torch_dtype=torch.float16,
+            load_in_4bit=True,
+            max_new_tokens=512,
+            temperature=0.0
+        )
+        _FAITHFUL_LLM = HuggingFacePipeline(pipeline=hf_pipe)
+except Exception as e:
+    _FAITHFUL_LLM = None
+    print(f"Faithfulness LLM could not load: {e}")
 
 def summary_scores(query: str, docs: List[Document], summary: str) -> Dict[str, float]:
     """
     docs = the chunks fed to reader (ground truth for faithfulness)
     summary = reader output
     """
-    faithfulness = load_evaluator("faithfulness", llm=_FAITHFUL_LLM) # move outside once summary included?
-
-    res = faithfulness.evaluate(
+    if _FAITHFUL_LLM is None:
+        return {"faithfulness": None, "explanation": "Faithfulness evaluation skipped"}
+    
+    evaluator = load_evaluator("faithfulness", llm=_FAITHFUL_LLM)
+    res = evaluator.evaluate(
         question=query,
         contexts=[d.page_content for d in docs],
         answer=summary,

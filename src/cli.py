@@ -17,7 +17,7 @@ def query(
                                  help="Generate summary with LLM"),
     ):
     retr_chain = build_retrieval_chain()
-    result = retr_chain.invoke(q)
+    result = retr_chain.invoke({"docs": q})
     docs = result["docs"][:top]
 
     if summary:    

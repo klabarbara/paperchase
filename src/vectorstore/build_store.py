@@ -9,7 +9,7 @@ assumes columns 'paper_id', 'title', and 'abstract' for now (as i know for a fac
 import csv, pathlib, tqdm
 from langchain.docstore.document import Document
 from langchain_openai.embeddings import AzureOpenAIEmbeddings
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 
 from ..config import settings
@@ -24,8 +24,8 @@ def main():
         azure_deployment=settings.embed_deployment,
         model=settings.embed_deployment,
     )
-     emb = HuggingFaceEmbeddings(
-        model_name="hkunlp/instructor-small",
+    emb = HuggingFaceEmbeddings(
+        model_name="hkunlp/instructor-base",
         model_kwargs={"device": "cpu"},
         encode_kwargs={"normalize_embeddings": True}
     )
