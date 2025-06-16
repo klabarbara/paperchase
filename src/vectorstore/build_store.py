@@ -8,8 +8,7 @@ assumes columns 'paper_id', 'title', and 'abstract' for now (as i know for a fac
 
 import csv, pathlib, tqdm
 from langchain.docstore.document import Document
-from langchain_openai.embeddings import AzureOpenAIEmbeddings
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings, HuggingFaceEndpointEmbeddings
 from langchain_chroma import Chroma
 
 from ..config import settings
@@ -18,17 +17,20 @@ CSV_PATH = pathlib.Path("data/cs_papersum.csv")
 CHROMA_DIR = pathlib.Path(".chroma_full")
 
 def main():
-    emb = AzureOpenAIEmbeddings(
-        azure_endpoint=settings.azure_endpoint,
-        api_key=settings.azure_key,
-        azure_deployment=settings.embed_deployment,
-        model=settings.embed_deployment,
-    )
-    emb = HuggingFaceEmbeddings(
-        model_name="hkunlp/instructor-base",
-        model_kwargs={"device": "cpu"},
-        encode_kwargs={"normalize_embeddings": True}
-    )
+    if settings.oss_mode == "remote":
+        emb = HuggingFaceEndpointEmbeddings(
+            endpoint_url=settings.embed_endpoint,
+            huggingface_api_token=settings.huggingface_token,
+            task="feature-extraction",
+        )
+    else:
+        emb = HuggingFaceEmbeddings(
+            model_name="hkunlp/instructor-base",
+            model_kwargs={"device": "cpu"},
+            encode_kwargs={"normalize_embeddings": True}
+        )
+    
+    
     vectordb = Chroma(
         collection_name="cs_papersum",
         embedding_function=emb,
