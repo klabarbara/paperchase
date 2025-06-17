@@ -22,13 +22,12 @@ def build_keyword_chain():
     if settings.oss_mode == "remote":
         llm = HuggingFaceEndpoint(
             endpoint_url=settings.keyword_endpoint,
-            huggingface_api_token=settings.keyword_token,
-            model_kwargs={
-                "task": "text2text-generation",
-                "max_new_tokens": 32,
-            },
-            timeout=30,
+            huggingfacehub_api_token=settings.keyword_token,
+            task="text2text-generation",
+            max_new_tokens=32,
+            timeout=30
         )
+
     else:
         hf_pipe = pipeline(
             task="text2text-generation",

@@ -1,8 +1,12 @@
 import azure.functions as func
 import json, logging
+from transformers import pipeline
 
+hf_generator = pipeline(
+    "text-generation",
+    model=""
+)
 from src.cli import query as query_func
-
 '''
 azure function entrypoint. registers route hanlder by using decorator api to expose POST endpoint at /query 
 '''

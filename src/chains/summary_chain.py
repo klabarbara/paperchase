@@ -9,8 +9,10 @@ def build_summary_chain():
     if settings.oss_mode == "remote":
         llm = HuggingFaceEndpoint(
             endpoint_url=settings.summary_endpoint,
-            huggingface_api_token=settings.summary_token,
-            model_kwargs={"task": "summarization", "max_new_tokens": 256, "temperature": 0.3},
+            huggingfacehub_api_token=settings.summary_token,
+            task="summarization", 
+            max_new_token=256, 
+            temperature=0.3,
             timeout=60,
         )
     else:

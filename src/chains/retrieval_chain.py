@@ -4,6 +4,7 @@ from pathlib import Path
 
 from langchain_core.documents import Document
 from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEndpointEmbeddings
 from langchain_chroma import Chroma
 from langchain_core.runnables import RunnableParallel
 from langchain_community.document_loaders import ArxivLoader
@@ -90,10 +91,11 @@ def build_retrieval_chain(use_full_docs: bool = False):
     """
     
     if settings.oss_mode == "remote":
-        emb = HuggingFaceEmbeddings(
-            endpoint_url=settings.embed_endpoint,
-            huggingface_api_token=settings.embed_token,
+        emb = HuggingFaceEndpointEmbeddings(
+            model="hkunlp/instructor-base",
             task="feature-extraction",
+            huggingfacehub_api_token=settings.embed_token,
+            
         )
     else:
         emb = HuggingFaceEmbeddings(
