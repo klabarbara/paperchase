@@ -36,8 +36,3 @@ az group create -n paperchase-rg -l eastus
 az storage account create -g paperchase-rg -n paperchasesa --sku Standard_LRS
 func azure functionapp publish paperchase‑func -g paperchase-rg --python
 ```
-
-## TODO: evaluation/metric explanation go here
-```bash
-python -m src.eval.run_eval
-```
