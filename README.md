@@ -12,7 +12,7 @@ app_file: src/frontend/gradio_frontend.py
 # paperchase
 Recommendation system for background reading
 
-# Langchain/Azure Update (v0.2)
+# Langchain/Azure Update (v1.0)
 
 An Azure‑native LangChain application that retrieves computer‑science papers from arXiv, ranks them, and returns concise summaries.
 
