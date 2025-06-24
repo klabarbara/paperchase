@@ -3,7 +3,7 @@ import json, logging
 from transformers import pipeline
 
 hf_generator = pipeline(
-    "text-generation",
+    "text2text-generation",
     model=""
 )
 from src.cli import query as query_func

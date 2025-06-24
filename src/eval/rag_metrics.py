@@ -1,3 +1,5 @@
+# rag_metrics.py
+
 from typing import List, Dict
 import torch
 from transformers import pipeline
@@ -35,18 +37,17 @@ try:
         _FAITHFUL_LLM = HuggingFaceEndpoint(
             endpoint_url=settings.faithful_endpoint,
             huggingface_api_toke=settings.huggingface_token,
-            model_kwargs={"task": "text-generation", "max_new_tokens": 512, "temperature": 0.0},
+            model_kwargs={"task": "text2text-generation", "max_new_tokens": 512, "temperature": 0.0},
             timeout=60,
         )
     else:
         hf_pipe = pipeline(
-            task="text-generation",
-            model="meta-llama/Llama-2-7b-chat-hf",
+            task="text2text-generation",
+            model="google/flan-t5-large",
             device_map="auto",
             torch_dtype=torch.float16,
             load_in_4bit=True,
             max_new_tokens=512,
-            temperature=0.0
         )
         _FAITHFUL_LLM = HuggingFacePipeline(pipeline=hf_pipe)
 except Exception as e:

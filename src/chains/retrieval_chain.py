@@ -1,3 +1,5 @@
+# retrieval_chain.py
+
 import re
 import hashlib
 from pathlib import Path
@@ -34,7 +36,7 @@ def _docs_from_loader(query: str, k: int) -> list[Document]:
                 page_content=d.page_content,
                 metadata={
                     "title": d.metadata.get("Title"),
-                    "url": d.metadata.get("Entry ID"), # entry_id?
+                    "url": d.metadata.get("Entry ID"), # or entry_id?
                     "published": d.metadata.get("Published"),
                     "arxiv_id": arxiv_id
                 },
@@ -80,7 +82,10 @@ def clean_keywords(raw: str) -> str:
     lines = raw.splitlines()
     cleaned = [re.sub(r"\*\*(.*?)\*\*", r"\1", line).strip() for line in lines]
     cleaned = [re.sub(r"^\d+\.\s*", "", line) for line in cleaned]
-    return ", ".join(filter(None, cleaned))
+
+    arxiv_query = " AND ".join(cleaned)
+    return f"all:({arxiv_query})"
+
 
 
 def build_retrieval_chain(use_full_docs: bool = False):

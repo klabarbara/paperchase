@@ -1,3 +1,5 @@
+# summary_chain.py
+
 from transformers import pipeline
 from langchain.chains.summarize import load_summarize_chain
 from langchain_huggingface import HuggingFacePipeline
@@ -23,7 +25,6 @@ def build_summary_chain():
             max_new_tokens=256,
             temperature=0.3,
         )
-        breakpoint()
         llm = HuggingFacePipeline(pipeline=hf_pipe)
 
     return load_summarize_chain(llm, chain_type="map_reduce")

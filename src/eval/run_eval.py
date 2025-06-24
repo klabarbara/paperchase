@@ -1,3 +1,5 @@
+# run_eval.py
+ 
 import rich, statistics
 import json
 import pathlib
@@ -25,8 +27,8 @@ def run():
         gold = example["gold_ids"]
 
         # retrieval
-        docs = retr_chain.invoke(q)
-        pred_ids = [d.get("arxiv_id") for d in docs]
+        docs = retr_chain.invoke({"docs": q})["docs"]
+        pred_ids = [d.metadata["arxiv_id"] for d in docs]
         retrieval_metrics.append(retrieval_scores(pred_ids, gold))
 
         if EVAL_SUMMARIES:
