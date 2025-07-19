@@ -4,10 +4,10 @@ import rich, statistics
 import json
 import pathlib
 
-from .rag_metrics import retrieval_scores, summary_scores
-from ..chains.retrieval_chain import build_retrieval_chain
-from ..chains.summary_chain import build_summary_chain
-from ..config import settings
+from src.eval.rag_metrics import retrieval_scores, summary_scores
+from src.chains.retrieval_chain import build_retrieval_chain
+from src.chains.summary_chain import build_summary_chain
+from src.config import settings
 
 
 EVAL_SUMMARIES = False

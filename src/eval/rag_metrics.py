@@ -8,7 +8,7 @@ from langchain_huggingface import HuggingFacePipeline
 from langchain_huggingface import HuggingFaceEndpoint
 from langchain.evaluation import load_evaluator
 from langchain_core.documents import Document
-from ..config import settings
+from src.config import settings
 
 # DIY metrics since I can't find where tf they are in langchain/smith (TODO)
 def _precision_at_k(pred: List[str], gold: List[str], k: int) -> float:
